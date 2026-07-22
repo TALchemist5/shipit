@@ -50,7 +50,7 @@ echo "Location:            $LOCATION"
 echo
 echo "== Registering resource providers (this runs in the background, several minutes) =="
 PROVIDER_PIDS=()
-for P in Microsoft.ContainerService Microsoft.ContainerRegistry Microsoft.App Microsoft.Insights Microsoft.OperationalInsights; do
+for P in Microsoft.ContainerService Microsoft.ContainerRegistry Microsoft.App Microsoft.Insights Microsoft.OperationalInsights Microsoft.ManagedIdentity; do
   az provider register -n "$P" --wait -o none &
   PROVIDER_PIDS+=($!)
 done
