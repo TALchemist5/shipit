@@ -110,14 +110,28 @@ echo "Waiting for resource-provider registration to finish..."
 wait "${PROVIDER_PIDS[@]}"
 az containerapp env create -g "$RG" -n "$CAENV" -l "$LOCATION" -o none
 ACR_ID="$(az acr show -n "$ACR" --query id -o tsv)"
+if ! [[ "$ACR_ID" =~ ^/subscriptions/ ]]; then
+  echo "ERROR: could not read a valid resource ID for ACR $ACR (got: '$ACR_ID')." >&2
+  exit 1
+fi
 for ENV in staging production; do
   az containerapp create -g "$RG" -n "shipit-${ENV}" \
     --environment "$CAENV" \
     --image mcr.microsoft.com/k8se/quickstart:latest \
     --ingress external --target-port 8080 \
     --min-replicas 1 -o none
-  CA_PID="$(az containerapp identity assign -g "$RG" -n "shipit-${ENV}" \
-    --system-assigned --query principalId -o tsv)"
+  # Assign the identity, then read its principal ID back with a separate,
+  # plain "show" call. Capturing the ID directly from "identity assign"'s own
+  # output is unreliable -- that command's progress spinner can leak stray
+  # characters into the captured value, which then makes the next command
+  # (role assignment create) fail with a confusing "MissingSubscription"
+  # error that has nothing to do with subscriptions or providers.
+  az containerapp identity assign -g "$RG" -n "shipit-${ENV}" --system-assigned -o none
+  CA_PID="$(az containerapp show -g "$RG" -n "shipit-${ENV}" --query identity.principalId -o tsv)"
+  if ! [[ "$CA_PID" =~ ^[0-9a-fA-F-]{36}$ ]]; then
+    echo "ERROR: could not read a valid principal ID for shipit-${ENV} (got: '$CA_PID')." >&2
+    exit 1
+  fi
   az role assignment create --assignee-object-id "$CA_PID" \
     --assignee-principal-type ServicePrincipal \
     --role AcrPull --scope "$ACR_ID" -o none
