@@ -35,7 +35,7 @@ jobs:
       - name: Test
         run: dotnet test --configuration Release --no-build --logger "trx;LogFileName=test-results.trx"
 
-              - name: Publish the app
+      - name: Publish the app
         run: dotnet publish src/ShipIt --configuration Release --no-build -o ./publish
 
       - name: Upload the published app
