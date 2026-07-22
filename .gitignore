@@ -1,5 +1,25 @@
+# .NET build output
 bin/
 obj/
-publish/
+[Dd]ebug/
+[Rr]elease/
 *.user
+
+# Test results
+[Tt]est[Rr]esults/
+*.trx
+coverage/
+*.coverage
+
+# Rider / VS / VS Code
+.idea/
 .vs/
+.vscode/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Local env files (never commit secrets; the pipeline uses OIDC, not secrets)
+*.env
+.env
